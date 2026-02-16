@@ -37,7 +37,7 @@ class MyPlugin(Star):
             'X-authkey':"6LOCrMadnLTXyP" 
         }
         async with aiohttp.ClientSession() as session:
-            async with session.get(url,header=header) as response:
+            async with session.get(url,headers=header) as response:
                 data=await response.json()
         find_result=json.loads(data)
         from astrbot.api.message_components import Node,Plain
