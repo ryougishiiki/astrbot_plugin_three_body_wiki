@@ -39,14 +39,7 @@ class MyPlugin(Star):
         async with aiohttp.ClientSession() as session:
             async with session.get(url,headers=header) as response:
                 data=await response.json()
-        find_result=data
-        from astrbot.api.message_components import Node,Plain
-        find_text=Node(
-            uin=3840638231,
-            name="搜索结果",
-            content=[
-                Plain(find_result[3])
-            ]
-        )
+        if data[1]==[] and data[2]==[] and data[3]==[]:
+            yield event.plain_result("搜索目标不存在")
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
