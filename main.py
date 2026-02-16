@@ -31,9 +31,13 @@ class MyPlugin(Star):
 
     @santi.command("find",alias={'查找'})
     async def find(self,event:AstrMessageEvent,find_thing:str):
-        url=f"https://santi.huijiwiki.com/api.php?action=opensearch&format=json&search={str}"
+        url=f"https://santi.huijiwiki.com/api.php?action=opensearch&format=json&search={find_thing}"
+        header={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'X-authkey':"6LOCrMadnLTXyP" 
+        }
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+            async with session.get(url,header) as response:
                 data=await response.json()
         find_result=json.loads(data)
         from astrbot.api.message_components import Node,Plain
