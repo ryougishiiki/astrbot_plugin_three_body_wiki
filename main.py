@@ -45,7 +45,7 @@ class MyPlugin(Star):
             if len(data[1])==1 :
                 yield event.plain_result(f"搜索到一个结果\n\n{data[1][0]}:{data[2][0]}\n\n链接：{data[3][0]}")
             else:
-                if data[1][0][-5:] == "（消歧义）":
+                if data[1][0][-5:] == "(消歧义)":
                     return_result:str=f"该结果存在消歧义界面：{data[3][0]}\n\n"
                     for i in range(len(data[2])):
                         return_result+=f"{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
