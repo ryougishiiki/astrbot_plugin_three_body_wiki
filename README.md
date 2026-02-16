@@ -1,9 +1,3 @@
-# helloworld
-
-AstrBot 插件模板
-
-A template plugin for AstrBot plugin feature
-
-# 支持
-
-- [插件开发文档](https://docs.astrbot.app/dev/star/plugin-new.html)
+# 灰机三体wiki查询插件
+/santi-help /三体-帮助 ：查看帮助列表
+/santi <find_thing>:str /三体 <find_thing>:str  ：在灰机三体wiki中查询<find_thing>
