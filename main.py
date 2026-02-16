@@ -31,7 +31,7 @@ class MyPlugin(Star):
 
     @santi.command("find",alias={'查找'})
     async def find(self,event:AstrMessageEvent,find_thing:str):
-        url="https://santi.huijiwiki.com/api.php?action=opensearch&format=json&search={str}"
+        url=f"https://santi.huijiwiki.com/api.php?action=opensearch&format=json&search={str}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data=await response.json()
