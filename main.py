@@ -43,12 +43,12 @@ class MyPlugin(Star):
             yield event.plain_result("搜索目标不存在")
         else:
             if len(data[1])==1 :
-                yield event.plain_result("搜索到一个结果\n\n{data[1][0]}:{data[2][0]}\n\n链接：{data[3][0]}")
+                yield event.plain_result(f"搜索到一个结果\n\n{data[1][0]}:{data[2][0]}\n\n链接：{data[3][0]}")
             else:
                 if data[1][0][-5:] == "（消歧义）":
-                    return_result:str="该结果存在消歧义界面：{data[3][0]}\n\n"
+                    return_result:str=f"该结果存在消歧义界面：{data[3][0]}\n\n"
                     for i in range(len(data[2])):
-                        return_result+="{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
+                        return_result+=f"{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
                     from astrbot.api.message_components import Node,Plain   
                     find_result=Node(
                         uin=3840638231,
@@ -60,9 +60,9 @@ class MyPlugin(Star):
                     yield event.chain_result([find_result])
                 else:
                     page_num=len(data[1])
-                    return_result:str="查找到{page_name}个页面"
+                    return_result:str=f"查找到{page_num}个页面"
                     for i in range(len(data[2])):
-                        return_result+="{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
+                        return_result+=f"{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
                     from astrbot.api.message_components import Node,Plain   
                     find_result=Node(
                         uin=3840638231,
