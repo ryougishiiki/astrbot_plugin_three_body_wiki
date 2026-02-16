@@ -47,8 +47,8 @@ class MyPlugin(Star):
             else:
                 if data[1][0][-5:] == "(消歧义)":
                     return_result:str=f"该结果存在消歧义界面：{data[3][0]}\n\n"
-                    for i in range(len(data[2])):
-                        return_result+=f"{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
+                    for i in range(len(data[2])-1):
+                        return_result+=f"{data[1][i+1]}:{data[2][i+1]}\n链接：{data[3][i]}\n\n"
                     from astrbot.api.message_components import Node,Plain   
                     find_result=Node(
                         uin=3840638231,
