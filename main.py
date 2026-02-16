@@ -39,7 +39,7 @@ class MyPlugin(Star):
         async with aiohttp.ClientSession() as session:
             async with session.get(url,headers=header) as response:
                 data=await response.json()
-        find_result=json.loads(data)
+        find_result=data
         from astrbot.api.message_components import Node,Plain
         find_text=Node(
             uin=3840638231,
