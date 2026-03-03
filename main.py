@@ -1,6 +1,7 @@
+
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
+from astrbot.api.message_components import Node,Plain 
 from astrbot.api import AstrBotConfig
 import aiohttp
 
@@ -9,25 +10,30 @@ class MyPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
-        self.www=self.config.get("www","main")
-        self.token=self.config.get("token","")
+        self.www = self.config.get("www","main")
+        self.token = self.config.get("token","")
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
     @filter.command("find",alias={'search'})
-    async def santi(self,event:AstrMessageEvent,thing:str):
+    async def find(self,event:AstrMessageEvent,thing:str):
         if self.www!="main":
-            url=f"https://{self.www}.huijiwiki.com/api.php?action=opensearch&format=json&search={thing}"
+            url = f"https://{self.www}.huijiwiki.com/api.php?action=opensearch&format=json&search={thing}"
         else:
-            url=f"https://huijiwiki.com/api.php?action=opensearch&format=json&search={thing}"
-        header={
+            url = f"https://huijiwiki.com/api.php?action=opensearch&format=json&search={thing}"
+        header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'X-authkey':f"{self.token}" 
         }
         async with aiohttp.ClientSession() as session:
             async with session.get(url,headers=header) as response:
-                data=await response.json()
-            if data[1]==[] and data[2]==[] and data[3]==[]:
+                try:
+                    data = await response.json()
+                except Exception as error:
+                    yield event.plain_result(f"网络服务遇到问题{error}")
+                    return
+
+            if not data[1] and not data[2] and not data[3]:
                 yield event.plain_result("搜索目标不存在")
             else:
                 if len(data[1])==1 :
@@ -37,36 +43,23 @@ class MyPlugin(Star):
                         return_result:str=f"该结果存在消歧义界面：{data[3][0]}\n\n"
                         for i in range(len(data[2])-1):
                             return_result+=f"{data[1][i+1]}:{data[2][i+1]}\n链接：{data[3][i]}\n\n"
-                        from astrbot.api.message_components import Node,Plain   
-                        find_result=Node(
-                            uin=3840638231,
-                            name="搜索结果",
-                            content=[
-                                Plain(return_result)
-                            ]
-                        )
-                        yield event.chain_result([find_result])
                     else:
                         page_num=len(data[1])
                         return_result:str=f"查找到{page_num}个页面"
                         for i in range(len(data[2])):
                             return_result+=f"{data[1][i]}:{data[2][i]}\n链接：{data[3][i]}\n"
-                        from astrbot.api.message_components import Node,Plain   
-                        find_result=Node(
-                            uin=3840638231,
+                    find_result=Node(
                             name="搜索结果",
                             content=[
                                 Plain(return_result)
                             ]
                         )
-                        yield event.chain_result([find_result])
-            
-
+                    yield event.chain_result([find_result])    
+                   
     @filter.command("wiki-help",alias={'获取帮助'})
     async def help(self,event:AstrMessageEvent):
         from astrbot.api.message_components import Node,Plain
         help_text=Node(
-            uin=3840638231,
             name="帮助文档",
             content=[
                 Plain("灰机wiki查询插件帮助列表 \n/wiki-help /获取帮助 ：获取帮助 \n/find /search find_thing<str> ：在灰机wiki中查询 find_thing 内容 <str>类型")
