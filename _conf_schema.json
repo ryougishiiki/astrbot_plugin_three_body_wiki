@@ -1,0 +1,12 @@
+{
+    "www":{
+        "type":"string",
+        "description": "灰机wiki站点的站点名（例：santi）如搜索主站则不填",
+        "default":""
+    },
+    "token":{
+        "type":"string",
+        "description":"鉴权码（有就填）",
+        "default":""
+    }
+}
