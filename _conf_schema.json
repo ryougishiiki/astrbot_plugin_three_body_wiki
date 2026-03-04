@@ -6,7 +6,8 @@
     },
     "token":{
         "type":"string",
-        "description":"鉴权码（有就填）",
+        "description":"鉴权码",
         "default":""
     }
+
 }
