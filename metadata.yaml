@@ -4,4 +4,5 @@ desc: 通过API调用在灰机wiki中搜索内容
 version: v2.0.1
 author: J-SLY
 repo: https://github.com/J-SLY/astrbot_plugin_three_body_wiki
-support_platforms: aiocqhttp
+support_platforms: 
+  - aiocqhttp
