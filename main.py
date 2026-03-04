@@ -5,7 +5,6 @@ from astrbot.api.message_components import Node,Plain
 from astrbot.api import AstrBotConfig
 import aiohttp
 
-@register("灰机wiki查询", "J-SLY", "灰机wiki查询", "1.1.0")
 class MyPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
