@@ -30,7 +30,7 @@ class MyPlugin(Star):
                 try:
                     data = await response.json()
                 except Exception as error:
-                    yield event.plain_result(f"网络服务遇到问题{error}")
+                    yield event.plain_result(f"{error}")
                     return
 
             if not data[1] and not data[2] and not data[3]:
