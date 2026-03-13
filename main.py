@@ -5,6 +5,7 @@ from astrbot.api import AstrBotConfig
 
 from playwright.async_api import async_playwright
 import json
+import asyncio
 
 
 class MyPlugin(Star):
@@ -13,21 +14,21 @@ class MyPlugin(Star):
         super().__init__(context)
 
         self.config = config
-        self.www = self.config.get("www", "main")
-        self.token = self.config.get("token", "")  # 保留但不使用
+        self.www = self.config.get("www", "")
+        self.token = self.config.get("token", "")  # 保留兼容
 
-        if self.www != "main":
-            self.base_url = f"https://{self.www}.huijiwiki.com"
-        else:
+        if not self.www or self.www == "main":
             self.base_url = "https://huijiwiki.com"
+        else:
+            self.base_url = f"https://{self.www}.huijiwiki.com"
 
-        self.browser = None
-        self.page = None
         self.playwright = None
+        self.browser = None
+        self.context = None
 
 
     async def initialize(self):
-        """启动浏览器（插件加载时只启动一次）"""
+        """插件加载时启动浏览器"""
 
         self.playwright = await async_playwright().start()
 
@@ -35,33 +36,41 @@ class MyPlugin(Star):
             headless=True
         )
 
-        context = await self.browser.new_context()
+        self.context = await self.browser.new_context()
 
-        self.page = await context.new_page()
-
-        # 访问首页一次，通过 Cloudflare challenge
-        await self.page.goto(self.base_url)
+        # 访问一次首页获取 Cloudflare cookie
+        try:
+            page = await self.context.new_page()
+            await page.goto(self.base_url, timeout=20000)
+            await page.close()
+        except:
+            pass
 
 
     async def _fetch_json(self, url):
 
-        await self.page.goto(url)
+        page = await self.context.new_page()
 
-        content = await self.page.content()
+        try:
 
-        # MediaWiki API 返回 JSON 在 <pre> 标签
-        if "<pre>" in content:
+            await page.goto(url, timeout=20000)
 
-            start = content.find("<pre>") + 5
-            end = content.find("</pre>")
+            text = await page.text_content("body")
 
-            json_text = content[start:end]
+            if text is None:
+                raise Exception("页面返回为空")
 
-        else:
-            # fallback
-            json_text = await self.page.text_content("body")
+            text = text.strip()
 
-        return json.loads(json_text)
+            if text.startswith("<pre"):
+                start = text.find(">") + 1
+                end = text.rfind("</pre>")
+                text = text[start:end]
+
+            return json.loads(text)
+
+        finally:
+            await page.close()
 
 
     @filter.command("find", alias={"search"})
@@ -141,7 +150,9 @@ class MyPlugin(Star):
 
 
     async def terminate(self):
-        """关闭浏览器"""
+
+        if self.context:
+            await self.context.close()
 
         if self.browser:
             await self.browser.close()
