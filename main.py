@@ -2,7 +2,9 @@ from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star
 from astrbot.api.message_components import Node, Plain
 from astrbot.api import AstrBotConfig
-import aiohttp
+
+from playwright.async_api import async_playwright
+import json
 
 
 class MyPlugin(Star):
@@ -19,34 +21,47 @@ class MyPlugin(Star):
         else:
             self.base_url = "https://huijiwiki.com"
 
+        self.browser = None
+        self.page = None
+        self.playwright = None
+
+
     async def initialize(self):
-        pass
+        """启动浏览器（插件加载时只启动一次）"""
+
+        self.playwright = await async_playwright().start()
+
+        self.browser = await self.playwright.chromium.launch(
+            headless=True
+        )
+
+        context = await self.browser.new_context()
+
+        self.page = await context.new_page()
+
+        # 访问首页一次，通过 Cloudflare challenge
+        await self.page.goto(self.base_url)
 
 
-    async def _create_session(self):
-        """
-        创建带浏览器特征的 session
-        """
+    async def _fetch_json(self, url):
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Accept-Language": "zh-CN,zh;q=0.9",
-            "Connection": "keep-alive",
-            "Referer": f"{self.base_url}/",
-            "Origin": self.base_url
-        }
+        await self.page.goto(url)
 
-        session = aiohttp.ClientSession(headers=headers)
+        content = await self.page.content()
 
-        # 访问首页拿 cookie（huiji 的 cf / waf 会检查）
-        try:
-            async with session.get(self.base_url):
-                pass
-        except:
-            pass
+        # MediaWiki API 返回 JSON 在 <pre> 标签
+        if "<pre>" in content:
 
-        return session
+            start = content.find("<pre>") + 5
+            end = content.find("</pre>")
+
+            json_text = content[start:end]
+
+        else:
+            # fallback
+            json_text = await self.page.text_content("body")
+
+        return json.loads(json_text)
 
 
     @filter.command("find", alias={"search"})
@@ -54,34 +69,17 @@ class MyPlugin(Star):
 
         url = f"{self.base_url}/api.php?action=opensearch&format=json&search={thing}"
 
-        session = await self._create_session()
-
         try:
+            data = await self._fetch_json(url)
+        except Exception as e:
+            yield event.plain_result(f"Wiki请求失败\n{str(e)}")
+            return
 
-            async with session.get(url) as response:
-
-                if response.status != 200:
-                    text = await response.text()
-                    yield event.plain_result(
-                        f"Wiki请求失败\nHTTP:{response.status}\n{text[:200]}"
-                    )
-                    return
-
-                try:
-                    data = await response.json()
-                except Exception:
-                    text = await response.text()
-                    yield event.plain_result(
-                        f"返回内容不是JSON\n{text[:300]}"
-                    )
-                    return
-
-        finally:
-            await session.close()
 
         if not data[1] and not data[2] and not data[3]:
             yield event.plain_result("搜索目标不存在")
             return
+
 
         if len(data[1]) == 1:
 
@@ -93,6 +91,7 @@ class MyPlugin(Star):
 
             yield event.plain_result(result)
             return
+
 
         if data[1][0].endswith("(消歧义)"):
 
@@ -114,6 +113,7 @@ class MyPlugin(Star):
                     f"{data[1][i]}:{data[2][i]}\n"
                     f"链接：{data[3][i]}\n\n"
                 )
+
 
         find_result = Node(
             name="搜索结果",
@@ -141,4 +141,10 @@ class MyPlugin(Star):
 
 
     async def terminate(self):
-        pass
+        """关闭浏览器"""
+
+        if self.browser:
+            await self.browser.close()
+
+        if self.playwright:
+            await self.playwright.stop()
